@@ -1,7 +1,7 @@
-const router = require('express').Router()
+import healthRoutes from './health.js'
 
-// Health check router
-const healthRouter = require('./health')
-router.use('/', healthRouter)
+const routes = app => {
+    healthRoutes(app)
+}
 
-module.exports = router
+export default routes

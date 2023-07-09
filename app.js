@@ -1,19 +1,18 @@
-require('dotenv').config()
-const express = require('express')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+import express from 'express'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 const app = express()
 app.use(express.json())
+
+// DB CONNECTION
+import conn from './db/mongoDB.js'
+conn();
 
 const apiPort = 3000
 app.listen(apiPort)
 console.log(`API running on port ${apiPort}`)
 
-// DB CONNECTION
-const conn = require("./db/mongoDB");
-conn();
-
 // Routes
-const routes = require('./routes/router')
-app.use('/api', routes)
+import routes from './routes/router.js'
+routes(app)

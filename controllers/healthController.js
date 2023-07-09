@@ -1,11 +1,7 @@
-const healthControler = {
-    check: (req, res) => {
-        try {
-            res.status(200).json({msg: 'health check pass.'})
-        } catch (e) {
-            console.error(e)
-        }        
-    } 
+export const check = (req, res) => {
+    try {
+        res.status(200).send('Health check: PASS!')
+    } catch (e) {
+        res.status(400).send(e)
+    }
 }
-
-module.exports = healthControler

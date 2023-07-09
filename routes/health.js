@@ -1,8 +1,7 @@
-const router = require('express').Router()
-const healthControler= require('../controllers/healthController')
+import { check } from '../controllers/healthController.js'
 
-router
-.route('/health')
-.get((req, res) => healthControler.check(req, res))
+const healthRoutes = (app) => {
+    app.get('/api/health', check)
+}
 
-module.exports = router;
+export default healthRoutes
