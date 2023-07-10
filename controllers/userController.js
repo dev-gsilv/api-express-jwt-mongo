@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { validateNewUser, validateLogin } from '../utils/validations.js'
+import { validateNewUser, validateLogin, validateUser } from '../utils/validations.js'
 import User from '../models/User.js'
 
 export const userRegister = async (req, res) => {
@@ -63,3 +63,27 @@ export const userLogin = async (req,res) => {
         res.status(500).json({msg: 'Server error. Please, try again!'})
     }
 }
+
+export const userProfile =  async (req, res) => {
+    const id = req.params.id
+
+    const user = await validateUser(id)
+    return res.status(user.htmlStatus).json({ msg: user.msg })
+}
+
+export function checkToken(req, res, next) {
+    const authHeader = req.headers["authorization"]
+    const token = authHeader && authHeader.split(" ")[1]
+  
+    if (!token) return res.status(401).json({ msg: "Access denied!" })
+  
+    try {
+      const secret = process.env.SECRET
+  
+      jwt.verify(token, secret)
+  
+      next();
+    } catch (err) {
+      res.status(400).json({ msg: "Invalid token!" })
+    }
+  }
