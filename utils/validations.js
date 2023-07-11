@@ -13,7 +13,10 @@ export async function validateNewUser(rawUser) {
     if(!rawUser.name){
         return 'You must provide a valid name!'    
     }
-    if(!rawUser.email){
+
+    const re = /^[a-z0-9.!#$%&'*+\-/=?^_`{|]+@[a-z0-9-]+\.[a-z]+(?:\.[a-z]+)*$/gi
+    const reCheck = rawUser.email.match(re)
+    if(!rawUser.email || reCheck === null ){
         return 'You must provide a valid email!'    
     }
     if(!rawUser.password || rawUser.password.length < 8){
@@ -32,7 +35,7 @@ export async function validateNewUser(rawUser) {
 
 export async function validateLogin(userParam) {
     // Null fields
-    if(!userParam.email){
+    if(!userParam.email ){
         return 'You must provide a valid email!'    
     }
     if(!userParam.password){

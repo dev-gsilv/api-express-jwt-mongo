@@ -29,11 +29,12 @@ export const registerUser = async (req, res) => {
             res.status(201).json({msg: 'User created!', user})
         } catch (e) {
             console.error(e)
-            res.status(500).json({msg: e.message})
+            res.status(500).json({msg: 'Server error. Please, try again!'})
         }
 
     } catch (e) {
-    res.status(400).send(e)
+        console.error(e)
+        res.status(400).json({msg: 'Invalid request. Please, try again!'})
     }
 }
 
@@ -58,7 +59,7 @@ export const updateUser = async (req, res) => {
 
         const userCheck = await validateUser(await User.findById(id))
 
-        if(userCheck.htmlStatus == 404){
+        if(userCheck.htmlStatus === 404){
             return res.status(userCheck.htmlStatus).json({ msg: userCheck.msg }) 
         }
 
@@ -67,18 +68,19 @@ export const updateUser = async (req, res) => {
         
         if(passwordOld && passwordNew) {
             // PASSWORD CHECK AND UPDATE
-            const isPasswordValid = await validatePassword(passwordOld, user.password)
             if(user.changePasswordAttemps >= 5){
-                return res.status(422).json({ msg: 'After a limited number of failed attempts to change password, this option will be temporarily blocked. This lock lasts about an hour and will then clear on its own.'})
+                return res.status(403).json({ msg: 'After a limited number of failed attempts to change password, this option will be temporarily blocked. This lock lasts about an hour and will then clear on its own.'})
             }
+
+            const isPasswordValid = await validatePassword(passwordOld, user.password)
             if(!isPasswordValid){
                 user.changePasswordAttemps += 1
                 await user.save()
                 return res.status(422).json({ msg: 'Incorrect password!' })
             }
+
             const salt = await bcrypt.genSalt(12)
             const passwordHash = await bcrypt.hash(passwordNew, salt)
-
             user.password = passwordHash
         }
         
@@ -88,15 +90,15 @@ export const updateUser = async (req, res) => {
 
         try {
             await user.save()
-            res.status(201).json({msg: 'User updated!'})
+            res.status(200).json({msg: 'User updated!'})
         } catch (e) {
             console.error(e)
             res.status(500).json({msg: 'Server error. Please, try again!'})
         }
 
     } catch (e) {
-        console.log(e)
-        res.status(400).send(e)
+        console.error(e)
+        res.status(400).json({msg: 'Invalid request. Please, try again!'})
     }
 }
 
@@ -112,7 +114,6 @@ export const removeUser = async (req, res) => {
 
         // KEEP USER OBJ FROM DB
         const user = userCheck.msg
-        console.log(user)
 
         try {
             const query = await user.deleteOne({id: id})
@@ -123,8 +124,8 @@ export const removeUser = async (req, res) => {
         }
 
     } catch (e) {
-        console.log(e)
-        res.status(400).send(e)
+        console.error(e)
+        res.status(400).json({msg: 'Invalid request. Please, try again!'})
     }
 }
 
@@ -134,14 +135,15 @@ export const removeWhere = async (req, res) => {
 
         try {
             const query = await User.deleteMany(condition)
-            res.status(201).json({msg: query})
+            res.status(200).json({'Documents deleted ': query.deletedCount})
         } catch (e) {
+            console.error(e)
             res.status(500).json({msg: 'Server error. Please, try again!'})
         }
 
     } catch (e) {
-        console.log(e)
-        res.status(400).send(e)
+        console.error(e)
+        res.status(400).json({msg: 'Invalid request. Please, try again!'})
     }
 }
 
@@ -167,7 +169,7 @@ export const login = async (req,res) => {
         res.status(200).json({ msg: 'Authentication successful!', token })
         
     } catch (e) {
-        console.log(e)
+        console.error(e)
         res.status(500).json({msg: 'Server error. Please, try again!'})
     }
 }
