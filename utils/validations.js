@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 
-const response = {
-    htmlStatus: true,
-    msg: true
+const response = { htmlStatus: 200, msg: ''}
+
+export async function validatePassword(givenPassword, hashPassword) {
+    return await bcrypt.compare(givenPassword, hashPassword)
 }
 
 export async function validateNewUser(rawUser) {
@@ -14,7 +16,7 @@ export async function validateNewUser(rawUser) {
     if(!rawUser.email){
         return 'You must provide a valid email!'    
     }
-    if(!rawUser.password){
+    if(!rawUser.password || rawUser.password.length < 8){
         return 'You must provide a valid password!'    
     }
     // Password confirmation
@@ -28,38 +30,53 @@ export async function validateNewUser(rawUser) {
     }
 }
 
-export async function validateLogin(user) {
+export async function validateLogin(userParam) {
     // Null fields
-    if(!user.email){
+    if(!userParam.email){
         return 'You must provide a valid email!'    
     }
-    if(!user.password){
+    if(!userParam.password){
         return 'You must provide a valid password!'    
     }
     // Valid user
-    const userExists = await User.findOne({ email: user.email })
-    if(!userExists){
+    const userDB = await User.findOne({ email: userParam.email })
+    if(!userDB){
         return 'Invalid email or password!'
     }
     // Valid password
-    const checkPassword = await bcrypt.compare(user.password, userExists.password)
-    if(!checkPassword){
+    const result = await validatePassword(userParam.password, userDB.password)
+    if( !result ){
         return 'Invalid email or password!'
     }
 }
 
-export async function validateUser(id) {
-    const userExists = await User.findById(id, "-password")
-    const obj = Object.create(response)
-    if(userExists){
-        obj.htmlStatus = 200
-        obj.msg = userExists
-        return obj
+export async function validateUser(queryResponse) {
+    const callBack = Object.create(response)
+
+    if(queryResponse === undefined || queryResponse === null || queryResponse.length == 0){
+        callBack.htmlStatus = 404
+        callBack.msg = 'No user was found!'
+        return callBack
     } else {
-        obj
-        obj.htmlStatus = 404
-        obj.msg = 'User not found'
-        return obj
+        callBack.htmlStatus = 200
+        callBack.msg = queryResponse
+        return callBack
     }
-    
+}
+
+export function checkToken(req, res, next) {
+    const authHeader = req.headers["authorization"]
+    const token = authHeader && authHeader.split(" ")[1]
+  
+    if (!token) return res.status(401).json({ msg: "Access denied!" })
+  
+    try {
+      const secret = process.env.SECRET
+  
+      jwt.verify(token, secret)
+  
+      next();
+    } catch (err) {
+      res.status(400).json({ msg: "Invalid token!" })
+    }
 }

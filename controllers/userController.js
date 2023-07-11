@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { validateNewUser, validateLogin, validateUser } from '../utils/validations.js'
+import { validateNewUser, validateLogin, validateUser, validatePassword } from '../utils/validations.js'
 import User from '../models/User.js'
 
-export const userRegister = async (req, res) => {
+export const registerUser = async (req, res) => {
     try {
         const {name, email, password, passwordConfirmation} = req.body
 
@@ -21,15 +21,15 @@ export const userRegister = async (req, res) => {
         const user = new User({
             name,
             email,
-            password: passwordHash
+            password: passwordHash,
         })
 
         try {
             await user.save()
-            res.status(201).json({msg: 'User created!'})
+            res.status(201).json({msg: 'User created!', user})
         } catch (e) {
             console.error(e)
-            res.status(500).json({msg: 'Server error. Please, try again!'})
+            res.status(500).json({msg: e.message})
         }
 
     } catch (e) {
@@ -37,7 +37,115 @@ export const userRegister = async (req, res) => {
     }
 }
 
-export const userLogin = async (req,res) => {
+export const getUser =  async (req, res) => {
+    const id = req.params.id
+
+    const user = await validateUser(await User.findById(id, "-password"))
+
+    return res.status(user.htmlStatus).json({ msg: user.msg })
+}
+
+export const getAllUsers = async (req, res) => {
+    const users = await validateUser(await User.find({}, "-password"))
+
+    return res.status(users.htmlStatus).json({ msg: users.msg })    
+}
+
+export const updateUser = async (req, res) => {
+    try {
+        const {name, passwordOld, passwordNew} = req.body
+        const id = req.params.id
+
+        const userCheck = await validateUser(await User.findById(id))
+
+        if(userCheck.htmlStatus == 404){
+            return res.status(userCheck.htmlStatus).json({ msg: userCheck.msg }) 
+        }
+
+        // KEEP USER OBJ FROM DB
+        const user = userCheck.msg
+        
+        if(passwordOld && passwordNew) {
+            // PASSWORD CHECK AND UPDATE
+            const isPasswordValid = await validatePassword(passwordOld, user.password)
+            if(user.changePasswordAttemps >= 5){
+                return res.status(422).json({ msg: 'After a limited number of failed attempts to change password, this option will be temporarily blocked. This lock lasts about an hour and will then clear on its own.'})
+            }
+            if(!isPasswordValid){
+                user.changePasswordAttemps += 1
+                await user.save()
+                return res.status(422).json({ msg: 'Incorrect password!' })
+            }
+            const salt = await bcrypt.genSalt(12)
+            const passwordHash = await bcrypt.hash(passwordNew, salt)
+
+            user.password = passwordHash
+        }
+        
+        if(name){
+            user.name = name
+        }     
+
+        try {
+            await user.save()
+            res.status(201).json({msg: 'User updated!'})
+        } catch (e) {
+            console.error(e)
+            res.status(500).json({msg: 'Server error. Please, try again!'})
+        }
+
+    } catch (e) {
+        console.log(e)
+        res.status(400).send(e)
+    }
+}
+
+export const removeUser = async (req, res) => {
+    try {
+        const id = req.params.id
+
+        const userCheck = await validateUser(await User.findById(id))
+
+        if(userCheck.htmlStatus == 404){
+            return res.status(userCheck.htmlStatus).json({ msg: userCheck.msg }) 
+        }
+
+        // KEEP USER OBJ FROM DB
+        const user = userCheck.msg
+        console.log(user)
+
+        try {
+            const query = await user.deleteOne({id: id})
+            res.status(200).json({msg: query})
+        } catch (e) {
+            console.error(e)
+            res.status(500).json({msg: 'Server error. Please, try again!'})
+        }
+
+    } catch (e) {
+        console.log(e)
+        res.status(400).send(e)
+    }
+}
+
+export const removeWhere = async (req, res) => {
+    try {
+        const condition = req.body.condition
+
+        try {
+            const query = await User.deleteMany(condition)
+            res.status(201).json({msg: query})
+        } catch (e) {
+            res.status(500).json({msg: 'Server error. Please, try again!'})
+        }
+
+    } catch (e) {
+        console.log(e)
+        res.status(400).send(e)
+    }
+}
+
+export const login = async (req,res) => {
     const { email, password } = req.body
 
     const rawUser = {email, password}
@@ -53,7 +161,7 @@ export const userLogin = async (req,res) => {
             {
                 id: user._id,
             },
-            secret,
+            secret
         )
 
         res.status(200).json({ msg: 'Authentication successful!', token })
@@ -63,27 +171,3 @@ export const userLogin = async (req,res) => {
         res.status(500).json({msg: 'Server error. Please, try again!'})
     }
 }
-
-export const userProfile =  async (req, res) => {
-    const id = req.params.id
-
-    const user = await validateUser(id)
-    return res.status(user.htmlStatus).json({ msg: user.msg })
-}
-
-export function checkToken(req, res, next) {
-    const authHeader = req.headers["authorization"]
-    const token = authHeader && authHeader.split(" ")[1]
-  
-    if (!token) return res.status(401).json({ msg: "Access denied!" })
-  
-    try {
-      const secret = process.env.SECRET
-  
-      jwt.verify(token, secret)
-  
-      next();
-    } catch (err) {
-      res.status(400).json({ msg: "Invalid token!" })
-    }
-  }
