@@ -68,13 +68,13 @@ export const updateUser = async (req, res) => {
         
         if(passwordOld && passwordNew) {
             // PASSWORD CHECK AND UPDATE
-            if(user.changePasswordAttemps >= 5){
+            if(user.changePasswordAttemps.counter >= 5){
                 return res.status(403).json({ msg: 'After a limited number of failed attempts to change password, this option will be temporarily blocked. This lock lasts about an hour and will then clear on its own.'})
             }
 
             const isPasswordValid = await validatePassword(passwordOld, user.password)
             if(!isPasswordValid){
-                user.changePasswordAttemps += 1
+                user.changePasswordAttemps.counter += 1
                 await user.save()
                 return res.status(422).json({ msg: 'Incorrect password!' })
             }

@@ -91,12 +91,12 @@ export function validateNewProduct(product) {
     const arr =  Object.values(product)    
     for(let i = 0; i < arr.length; i++ ){
         if(!arr[i] || arr[i] === null || arr[i] === undefined || arr[i] === ''){
-            return 'You must provide valid information for all fields!'
+            return 'You must provide valid information for name, description and value fields!'
         }
     }
 }
 
-export async function validateProduct(queryResponse) {
+export async function productExist(queryResponse) {
     const callBack = Object.create(response)
 
     if(queryResponse === undefined || queryResponse === null || queryResponse.length == 0){
@@ -108,4 +108,42 @@ export async function validateProduct(queryResponse) {
         callBack.msg = queryResponse
         return callBack
     }
+}
+
+//  CAST EMPTY STRING TO UNDEFINED, TO COMPLY WITH MONGOOSE MODEL CLASS VALIDATOR
+export const modifiedCast = (string) => {
+    if(string === ''){
+        string = undefined
+    }
+return string
+}
+
+// FORMAT LONG DECIMALS TO 2 DIGITS
+export const roundOff = (v) => {
+    // JS WON'T SAVE 0 VALUES ON THE RIGHT (E.G 1.00 => 1; 1.10 => 1.1)
+    let fix = v.toString()
+    if(!v.match(/\./)){
+        fix = v.concat('.', '00')
+        fix = Number(fix)
+        console.log('if: '+fix, typeof(fix))
+        return fix
+    }
+    const arrNum = v.split('.')
+    const decimalCount = arrNum[1].length
+    switch(decimalCount){
+    case 1:
+        fix = arrNum[0].concat('.', arrNum[1]).concat('0')        
+        fix = Number(fix)
+        return fix
+    default:
+        let decimal = arrNum[1].substring(0, 2)    
+        fix = arrNum[0].concat('.', decimal)
+        fix = Number(fix)
+        return fix
+    }
+}
+
+export const toBrlCurrency = (v) => {
+    const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+    return money
 }
