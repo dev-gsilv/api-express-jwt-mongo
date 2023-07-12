@@ -1,15 +1,23 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
+export const userSchema = new mongoose.Schema(
     {
         name: String, 
         email: { type: String, match: /^[a-z0-9.!#$%&'*+\-/=?^_`{|]+@[a-z0-9-]+\.[a-z]+(?:\.[a-z]+)*$/gi },
         password: {type: String},
         changePasswordAttemps: 
             {
-                type: Number,
-                default: 0,
-                expireAfterSeconds: 3600
+                counter: 
+                {
+                    type: Number,
+                    default: 0,                    
+                },
+                tracker:
+                {
+                    type: Date,
+                    default: Date.now,
+                    expireAfterSeconds: 3600
+                }
             }
     },
     { timestamps: true }

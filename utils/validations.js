@@ -19,13 +19,16 @@ export async function validateNewUser(rawUser) {
     if(!rawUser.email || reCheck === null ){
         return 'You must provide a valid email!'    
     }
+
     if(!rawUser.password || rawUser.password.length < 8){
         return 'You must provide a valid password!'    
     }
+
     // Password confirmation
     if(rawUser.password !== rawUser.passwordConfirmation){
         return 'Password confirmation does not match!'
     }
+
     // Duplicated user
     const userExists = await User.findOne({ email: rawUser.email })
     if(userExists){
@@ -81,5 +84,28 @@ export function checkToken(req, res, next) {
       next();
     } catch (err) {
       res.status(400).json({ msg: "Invalid token!" })
+    }
+}
+
+export function validateNewProduct(product) {
+    const arr =  Object.values(product)    
+    for(let i = 0; i < arr.length; i++ ){
+        if(!arr[i] || arr[i] === null || arr[i] === undefined || arr[i] === ''){
+            return 'You must provide valid information for all fields!'
+        }
+    }
+}
+
+export async function validateProduct(queryResponse) {
+    const callBack = Object.create(response)
+
+    if(queryResponse === undefined || queryResponse === null || queryResponse.length == 0){
+        callBack.htmlStatus = 404
+        callBack.msg = 'No product was found!'
+        return callBack
+    } else {
+        callBack.htmlStatus = 200
+        callBack.msg = queryResponse
+        return callBack
     }
 }
