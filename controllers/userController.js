@@ -68,14 +68,19 @@ export const updateUser = async (req, res) => {
         
         if(passwordOld && passwordNew) {
             // PASSWORD CHECK AND UPDATE
+            /* Functionality to track pw update fails. See Expiration model
             if(user.changePasswordAttemps.counter >= 5){
                 return res.status(403).json({ msg: 'After a limited number of failed attempts to change password, this option will be temporarily blocked. This lock lasts about an hour and will then clear on its own.'})
             }
+            */
 
             const isPasswordValid = await validatePassword(passwordOld, user.password)
             if(!isPasswordValid){
+                /* Functionality to track pw update fails
                 user.changePasswordAttemps.counter += 1
+                user.changePasswordAttemps.tracker = Date().now
                 await user.save()
+                */
                 return res.status(422).json({ msg: 'Incorrect password!' })
             }
 
