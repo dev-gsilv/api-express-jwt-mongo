@@ -14,3 +14,5 @@ console.log(`API running on port ${apiPort}`)
 // Routes
 import routes from './routes/router.js'
 routes(app)
+
+// testing CICD github actions
